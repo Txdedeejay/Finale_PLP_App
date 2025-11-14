@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./db'); // your DB connection
+const path = require('path');
 
 const app = express();
 
@@ -41,6 +42,10 @@ connectDB().catch(err => console.error('DB connection error:', err));
 
 // log configured allowed origins for debugging (safe to show in logs)
 console.log('Configured ALLOWED_ORIGINS:', allowedOrigins);
+
+// Serve uploaded files statically from /uploads
+// ensures uploaded files (saved to backend/uploads) are accessible via /uploads/<filename>
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // -------------------------
 // Routes (mount available routes)

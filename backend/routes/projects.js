@@ -135,4 +135,36 @@ router.post('/:projectId/invite', auth, async (req, res) => {
   }
 });
 
+// ===== FILES ENDPOINTS =====
+// Attach uploaded file metadata to project
+router.post('/:projectId/files', auth, async (req, res) => {
+  try {
+    const { file } = req.body; // expect the upload route response.data to be passed as `file`
+    if (!file || !file.url) return res.status(400).json({ message: 'Invalid file data' });
+
+    const fileEntry = {
+      filename: file.filename || file.originalname || 'uploaded-file',
+      url: file.url,
+      fileType: file.fileType || file.mimetype || '',
+      size: file.size || 0,
+      uploadedBy: req.user._id,
+      uploadedAt: new Date(),
+    };
+
+    const project = await Project.findByIdAndUpdate(
+      req.params.projectId,
+      { $push: { files: fileEntry } },
+      { new: true }
+    );
+
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+
+    // return the added file entry (last element)
+    const added = project.files[project.files.length - 1];
+    res.status(201).json(added);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 module.exports = router;

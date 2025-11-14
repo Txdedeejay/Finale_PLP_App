@@ -20,6 +20,17 @@ const projectSchema = new mongoose.Schema({
   notes: [noteSchema],
   invitedVolunteers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Volunteer' }],
   teamMembers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+  ,
+  files: [
+    {
+      filename: String,
+      url: String,
+      fileType: String,
+      size: Number,
+      uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      uploadedAt: { type: Date, default: Date.now }
+    }
+  ]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Project', projectSchema);

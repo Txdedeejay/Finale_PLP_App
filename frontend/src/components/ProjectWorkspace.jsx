@@ -11,6 +11,9 @@ export default function ProjectWorkspace({ project, onClose }) {
 
   if (!project) return null;
 
+  // Normalize project id (support both _id from backend and id from local/mock data)
+  const projectId = project._id || project.id || (project?.projectId) || "demo-project";
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full h-[90vh] max-w-6xl flex flex-col">
@@ -33,7 +36,7 @@ export default function ProjectWorkspace({ project, onClose }) {
           {/* Canvas (main area) */}
           <div className="flex-1 flex flex-col">
             <h3 className="text-lg font-semibold mb-3 text-gray-700">💡 Brainstorming Canvas</h3>
-            <BrainstormCanvas />
+            <BrainstormCanvas projectId={projectId} />
           </div>
 
           {/* Project details sidebar */}
@@ -125,20 +128,20 @@ export default function ProjectWorkspace({ project, onClose }) {
         {/* Modals */}
         {showNotes && (
           <NotesModal
-            projectId={project._id || "demo-project"}
+            projectId={projectId}
             onClose={() => setShowNotes(false)}
           />
         )}
         {showInvite && (
           <InviteTeamModal
-            projectId={project._id || "demo-project"}
+            projectId={projectId}
             projectTitle={project.title}
             onClose={() => setShowInvite(false)}
           />
         )}
         {showChat && (
           <ChatModal
-            projectId={project._id || "demo-project"}
+            projectId={projectId}
             projectTitle={project.title}
             onClose={() => setShowChat(false)}
           />

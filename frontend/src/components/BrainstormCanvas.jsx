@@ -1,6 +1,9 @@
 import React, { useRef, useEffect, useState } from "react";
+import api from "../api";
 
-export default function BrainstormCanvas() {
+export default function BrainstormCanvas({ projectId } = {}) {
+  // projectId (optional) - used when saving the canvas and naming the file
+
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [tool, setTool] = useState("pen"); // pen, rectangle, circle, text, eraser
@@ -97,6 +100,53 @@ export default function BrainstormCanvas() {
     link.href = canvasRef.current.toDataURL("image/png");
     link.download = "brainstorm.png";
     link.click();
+  };
+
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+
+  const handleSaveCanvas = async () => {
+    if (!canvasRef.current) return;
+    try {
+      setSaving(true);
+      setSaveMessage("");
+
+      const blob = await new Promise((resolve) => canvasRef.current.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("Failed to get image blob");
+
+      const form = new FormData();
+      const filename = `brainstorm-${projectId || 'unspecified'}-${Date.now()}.png`;
+      form.append('file', blob, filename);
+
+      // Upload using existing api helper (which adds auth header)
+      const response = await api.post('/upload', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      const fileData = response.data?.data;
+
+      // If we have a projectId, attach the uploaded file metadata to the project
+      if (projectId && fileData) {
+        try {
+          await api.post(`/projects/${projectId}/files`, { file: fileData });
+          setSaveMessage('Canvas uploaded and linked to project');
+        } catch (attachErr) {
+          console.warn('Uploaded but failed to attach to project', attachErr);
+          setSaveMessage('Uploaded but failed to link to project');
+        }
+      } else if (fileData) {
+        setSaveMessage('Canvas uploaded (not linked: missing project id)');
+      } else {
+        setSaveMessage('Canvas uploaded');
+      }
+
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch (err) {
+      console.error('Failed to save canvas', err);
+      setSaveMessage('Failed to save canvas.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -211,6 +261,17 @@ export default function BrainstormCanvas() {
         >
           ⬇️ Download
         </button>
+        <button
+          onClick={handleSaveCanvas}
+          disabled={saving}
+          className="px-3 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition disabled:opacity-60"
+          title="Save canvas to backend"
+        >
+          {saving ? 'Saving...' : '💾 Save'}
+        </button>
+        {saveMessage && (
+          <span className="text-sm text-gray-700 ml-2">{saveMessage}</span>
+        )}
       </div>
 
       {/* Text input modal (if adding text) */}
